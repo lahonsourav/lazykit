@@ -1,0 +1,28 @@
+{
+  "name": "lazykit",
+  "version": "1.0.0",
+  "description": "Drop an issue, get a PR. AI-powered issue-to-PR automation using Claude.",
+  "bin": {
+    "lazykit": "./bin/index.js"
+  },
+  "scripts": {
+    "start": "node bin/index.js"
+  },
+  "keywords": [
+    "claude",
+    "ai",
+    "github-actions",
+    "automation",
+    "cli",
+    "issue-to-pr"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
