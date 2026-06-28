@@ -1,24 +1,30 @@
 'use strict';
 
-function generateWorkflow({ label, lintCommand, testCommand }) {
-  const hasLint = lintCommand && lintCommand !== 'skip';
-  const hasTest = testCommand && testCommand !== 'skip';
+function generateWorkflow({ label, autoTrigger }) {
+  const checkList = `            1. Review your changes and make sure no existing functionality is broken.
+            2. If you encounter errors you cannot fix, post a comment on the issue explaining what went wrong instead of committing broken code.`;
 
-  const checks = [
-    hasLint ? `Run \`${lintCommand}\` and fix any issues before committing.` : null,
-    hasTest ? `Run \`${testCommand}\` and make sure all tests pass before committing.` : null,
-    'If lint or tests fail and you cannot fix them, do NOT commit — instead post a comment on the issue explaining what went wrong.',
-  ].filter(Boolean);
-
-  const checkList = checks.map((c, i) => `            ${i + 1}. ${c}`).join('\n');
-
-  return `name: LazyKit
-
-on:
+  const trigger = autoTrigger
+    ? `on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]`
+    : `on:
   issues:
     types: [opened, labeled]
   issue_comment:
-    types: [created]
+    types: [created]`;
+
+  const condition = autoTrigger
+    ? `github.event.action == 'opened' ||
+      contains(github.event.comment.body, '@claude')`
+    : `contains(github.event.issue.labels.*.name, '${label}') ||
+      contains(github.event.comment.body, '@claude')`;
+
+  return `name: LazyKit
+
+${trigger}
 
 concurrency:
   group: lazykit-\${{ github.event.issue.number }}
@@ -27,8 +33,7 @@ concurrency:
 jobs:
   lazykit:
     if: >
-      contains(github.event.issue.labels.*.name, '${label}') ||
-      contains(github.event.comment.body, '@claude')
+      ${condition}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -45,7 +50,7 @@ jobs:
         with:
           claude_code_oauth_token: \${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           label_trigger: ${label}
-          claude_args: --max-turns 50 --dangerously-skip-permissions
+          claude_args: --dangerously-skip-permissions
           prompt: |
             You are an autonomous coding agent called LazyKit.
             Your job is to read the GitHub issue, understand the requirement,
